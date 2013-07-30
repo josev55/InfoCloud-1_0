@@ -26,6 +26,10 @@ public class FormModel implements Parcelable {
         this.mainHTML = mainHTML;
     }
 
+    public FormModel(Parcel parcel){
+        readFromParcel(parcel);
+    }
+
     public String getName() {
         return name;
     }
@@ -67,4 +71,18 @@ public class FormModel implements Parcelable {
         directoryName = parcel.readString();
         mainHTML = parcel.readString();
     }
+
+    public static final Creator<FormModel> CREATOR = new Creator<FormModel>(){
+
+        @Override
+        public FormModel createFromParcel(Parcel parcel) {
+            return new FormModel(parcel);
+        }
+
+        @Override
+        public FormModel[] newArray(int i) {
+            return new FormModel[i];  //To change body of implemented methods use File | Settings | File Templates.
+        }
+    };
+
 }

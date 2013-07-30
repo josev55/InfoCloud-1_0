@@ -46,7 +46,7 @@ public class MyActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         Activity activity = this;
-        FormModel formModel = (FormModel)activity.getIntent().getSerializableExtra("formInfo");
+        FormModel formModel = activity.getIntent().getParcelableExtra("formInfo");
         Log.d("DatePicker","Setting Date");
         Calendar c = Calendar.getInstance();
         mYear = c.get(Calendar.YEAR);
