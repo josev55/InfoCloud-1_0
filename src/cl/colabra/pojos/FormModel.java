@@ -1,5 +1,8 @@
 package cl.colabra.pojos;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.io.Serializable;
 
 /**
@@ -9,7 +12,7 @@ import java.io.Serializable;
  * Time: 10:02
  * To change this template use File | Settings | File Templates.
  */
-public class FormModel implements Serializable {
+public class FormModel implements Parcelable {
 
     private String name;
     private String directoryName;
@@ -45,5 +48,23 @@ public class FormModel implements Serializable {
 
     public void setMainHTML(String mainHTML) {
         this.mainHTML = mainHTML;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void writeToParcel(Parcel parcel, int i) {
+        parcel.writeString(this.name);
+        parcel.writeString(this.directoryName);
+        parcel.writeString(this.mainHTML);
+    }
+
+    private void readFromParcel(Parcel parcel){
+        name = parcel.readString();
+        directoryName = parcel.readString();
+        mainHTML = parcel.readString();
     }
 }
