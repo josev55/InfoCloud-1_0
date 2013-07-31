@@ -81,7 +81,7 @@ public class FormModel implements Parcelable {
 
         @Override
         public FormModel[] newArray(int i) {
-            return new FormModel[i];  //To change body of implemented methods use File | Settings | File Templates.
+            return new FormModel[i];
         }
     };
 

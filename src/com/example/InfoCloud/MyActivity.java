@@ -14,17 +14,18 @@ import android.widget.Toast;
 import cl.colabra.parsers.InfoHandler;
 import cl.colabra.pojos.FormModel;
 import cl.colabra.pojos.InfoModel;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
+import javax.xml.parsers.*;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.*;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Properties;
 
 
 public class MyActivity extends Activity {
@@ -56,7 +57,7 @@ public class MyActivity extends Activity {
         ventanita = (WebView)this.findViewById(R.id.webView);
         WebSettings settings = ventanita.getSettings();
         settings.setJavaScriptEnabled(true);
-        JavascriptAndroidInterface jai = new JavascriptAndroidInterface(this,ventanita);
+        JavascriptAndroidInterface jai = new JavascriptAndroidInterface(this,ventanita,formModel);
         ventanita.loadUrl(Uri.parse("file:///android_asset/forms/"+formModel.getDirectoryName() + "/" + formModel.getMainHTML()).toString());
         ventanita.addJavascriptInterface(jai, "AndroidFunction");
         customDialog = new CustomDialog(this,handlerCamera);
@@ -66,11 +67,13 @@ public class MyActivity extends Activity {
         private final WebView mBrowser;
 
         Context mContext;
+        private final FormModel formModel;
 
-        JavascriptAndroidInterface(Context c, WebView browser)
+        JavascriptAndroidInterface(Context c, WebView browser, FormModel fModel)
         {
             mContext = c;
             mBrowser = browser;
+            formModel = fModel;
         }
 
         public void openDatePickerDialog()
@@ -89,7 +92,7 @@ public class MyActivity extends Activity {
         public void saveXML(String data) throws ParserConfigurationException, SAXException, IOException {
             SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
             InfoHandler handler = new InfoHandler();
-            InputStream xmlStream = getAssets().open("forms/info.xml");
+            InputStream xmlStream = getAssets().open("forms/"+formModel.getDirectoryName()+"/info.xml");
             parser.parse(xmlStream,handler);
             InfoModel infoModel = handler.getInfoModel();
             Log.d("Pepito",data);
@@ -105,10 +108,13 @@ public class MyActivity extends Activity {
                     FileWriter fileWriter = new FileWriter(xmlFile);
                     fileWriter.write(data);
                     fileWriter.close();
+                    createDraft(formModel.getDirectoryName(),infoModel.getName()+"_"+infoModel.getLastCopy());
                     Toast.makeText(getApplicationContext(),"Guardado",Toast.LENGTH_SHORT).show();
                     finish();
                 } catch (IOException e) {
-                    Log.d("Pepito",e.getMessage());
+                    Log.e("Pepito",e.getMessage());
+                } catch (TransformerException e) {
+                    Log.e("Pepito",e.getMessage());
                 }
             }
         }
@@ -133,5 +139,81 @@ public class MyActivity extends Activity {
 
         }
     };
+
+    private void createDraft(String referenceName, String dataFile) throws IOException, ParserConfigurationException, SAXException, TransformerException {
+
+        File xmlFile = new File(Environment.getExternalStorageDirectory().getPath() + "/Forms/drafts.xml");
+        if (!xmlFile.exists())
+            copy("forms/common/drafts.xml",xmlFile);
+        File file = xmlFile;
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+
+        DocumentBuilder builder = factory.newDocumentBuilder();
+
+        Document draftDocument = (Document) builder.parse(file);
+
+        Element root = draftDocument.getDocumentElement();
+
+        Element element = draftDocument.createElement("draft");
+
+        Element refName = draftDocument.createElement("refName");
+
+        refName.setTextContent(referenceName);
+
+        Element data = draftDocument.createElement("data");
+
+        data.setTextContent(dataFile);
+
+        element.appendChild(refName);
+
+        element.appendChild(data);
+
+        root.appendChild(element);
+
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+
+        Transformer transformer = transformerFactory.newTransformer();
+
+        Properties outputProp = new Properties();
+
+        outputProp.setProperty(OutputKeys.INDENT,"yes");
+
+        outputProp.setProperty(OutputKeys.OMIT_XML_DECLARATION,"no");
+
+        outputProp.setProperty(OutputKeys.METHOD,"xml");
+
+        outputProp.setProperty(OutputKeys.VERSION,"1.0");
+
+        outputProp.setProperty(OutputKeys.ENCODING,"UTF-8");
+
+        transformer.setOutputProperties(outputProp);
+
+        DOMSource source = new DOMSource(draftDocument.getDocumentElement());
+
+        OutputStream outputStream = new ByteArrayOutputStream();
+
+        StreamResult stream = new StreamResult(outputStream);
+
+        transformer.transform(source,stream);
+
+        String outputString = outputStream.toString();
+
+        FileWriter fileWriter = new FileWriter(new File(file.getAbsolutePath()).toString());
+
+        fileWriter.write(outputString);
+
+        fileWriter.close();
+    }
+
+    private void copy(String in, File out) throws IOException {
+        InputStream inputStream = getAssets().open(in);
+        FileOutputStream f = new FileOutputStream(out);
+        byte[] buffer = new byte[1024];
+        int len1 = 0;
+        while ((len1 = inputStream.read(buffer)) > 0) {
+            f.write(buffer, 0, len1);
+        }
+        f.close();
+    }
 
 }
