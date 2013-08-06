@@ -28,7 +28,7 @@ import java.io.*;
  */
 public class SplashActivity extends Activity {
     private String httpResponse;
-    private Handler httpHandler = new Handler(){
+    private Handler httpHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             httpResponse = msg.getData().getString("HttpResponse");
@@ -36,31 +36,38 @@ public class SplashActivity extends Activity {
                 SAXParser saxParser = SAXParserFactory.newInstance().newSAXParser();
                 InputStream inputStream = new ByteArrayInputStream(httpResponse.getBytes());
                 FormListHandler formListHandler = new FormListHandler();
-                saxParser.parse(inputStream,formListHandler);
+                saxParser.parse(inputStream, formListHandler);
                 double version = formListHandler.getVersion();
                 File xmlFile = new File(Environment.getExternalStorageDirectory().getPath() + "/Forms/myforms.xml");
-                if (!xmlFile.exists()){
-                    AndroidUtils.copy("forms/common/myforms.xml",xmlFile,getApplicationContext());
+                if (!xmlFile.exists()) {
+                    AndroidUtils.copy("forms/common/myforms.xml", xmlFile, getApplicationContext());
                 }
-                saxParser.parse(xmlFile,formListHandler);
+                saxParser.parse(xmlFile, formListHandler);
                 double localVersion = formListHandler.getVersion();
-                if (localVersion != version){
+                if (localVersion != version) {
+                    File tmpFile = new File(Environment.getExternalStorageDirectory() + "/Forms/tmp/myforms.xml");
+                    if (!tmpFile.exists()) {
+                        File tmpDir = new File(Environment.getExternalStorageDirectory() + "/Forms/tmp");
+                        tmpDir.mkdirs();
+                        tmpFile.createNewFile();
+                        FileInputStream tmpIS = new FileInputStream(xmlFile);
+                        AndroidUtils.copy(tmpIS, tmpFile, getApplicationContext());
+                    }
                     xmlFile.delete();
                     xmlFile.createNewFile();
-                    //AndroidUtils.copy(inputStream,xmlFile,getApplicationContext());
                     FileWriter fileWriter = new FileWriter(xmlFile);
                     fileWriter.write(httpResponse);
                     fileWriter.close();
                 }
                 Intent nextActivity = new Intent();
-                nextActivity.setClass(getApplicationContext(),MenuActivity.class);
+                nextActivity.setClass(getApplicationContext(), MenuActivity.class);
                 startActivity(nextActivity);
             } catch (ParserConfigurationException e) {
-                Log.e("SplashActivity",e.getMessage());
+                Log.e("SplashActivity", e.getMessage());
             } catch (SAXException e) {
-                Log.e("SplashActivity",e.getMessage());
+                Log.e("SplashActivity", e.getMessage());
             } catch (IOException e) {
-                Log.e("SplashActivity",e.getMessage());
+                Log.e("SplashActivity", e.getMessage());
             }
         }
     };
@@ -68,16 +75,10 @@ public class SplashActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.splash_screen_layout);
-        if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)){
+        if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
             File myforms = new File(Environment.getExternalStorageDirectory() + "/Forms/myforms.xml");
-            if (!myforms.exists()){
-                HttpGetAdapter httpGetAdapter = new HttpGetAdapter(httpHandler);
-                httpGetAdapter.execute("http://192.168.4.130/forms/myforms.xml");
-            } else {
-                Intent nextActivity = new Intent();
-                nextActivity.setClass(getApplicationContext(),MenuActivity.class);
-                startActivity(nextActivity);
-            }
+            HttpGetAdapter httpGetAdapter = new HttpGetAdapter(httpHandler);
+            httpGetAdapter.execute("http://192.168.4.130/forms/myforms.xml");
         }
 
     }

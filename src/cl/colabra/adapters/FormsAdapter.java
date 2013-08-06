@@ -1,12 +1,14 @@
 package cl.colabra.adapters;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 import cl.colabra.pojos.FormItemModel;
 import cl.colabra.pojos.FormModel;
 import com.example.InfoCloud.R;
@@ -54,6 +56,19 @@ public class FormsAdapter extends BaseAdapter {
         TextView textView = (TextView) rowView.findViewById(R.id.formtitle);
         imageView.setImageResource(R.drawable.document);
         textView.setText(form.getName());
+        ImageView hasUpdateView = (ImageView) rowView.findViewById(R.id.hasUpdate);
+        if (form.isHasUpdate()){
+            hasUpdateView.setEnabled(true);
+            hasUpdateView.setVisibility(ImageView.VISIBLE);
+            hasUpdateView.setClickable(true);
+            hasUpdateView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Log.d("FormsAdapter","Esto funciona");
+                    Toast.makeText(c,"Updating",Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
         return rowView;  //To change body of implemented methods use File | Settings | File Templates.
     }
 }

@@ -6,6 +6,13 @@
         <RelativeLayout android:layout_height="wrap_content"
                         android:layout_width="match_parent"
                         android:padding="8dp">
+            <ImageView android:id="@+id/hasUpdate"
+                       android:layout_width="32dp"
+                       android:layout_height="32dp"
+                       android:scaleType="fitXY" android:layout_alignParentRight="true"
+                       android:layout_centerVertical="true"
+                       android:layout_marginRight="10dp"
+                       android:src="@drawable/update" android:visibility="invisible"/>
             <TextView android:layout_height="wrap_content"
                       android:layout_width="match_parent"
                       android:id="@+id/formtitle"

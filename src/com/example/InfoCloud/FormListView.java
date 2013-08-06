@@ -3,6 +3,7 @@ package com.example.InfoCloud;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -16,6 +17,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,11 +36,19 @@ public class FormListView extends Activity {
         setContentView(R.layout.forms);
 
         SAXParser listParser;
-        FormListHandler listHandler = new FormListHandler();
 
+        FormListHandler listHandler1 = new FormListHandler();
+
+        FormListHandler listHandler = null;
         try {
             listParser = SAXParserFactory.newInstance().newSAXParser();
-            listParser.parse(getAssets().open("forms/common/myforms.xml"),listHandler);
+            //listParser.parse(getAssets().open("forms/common/myforms.xml"),listHandler);
+            File tmpFile = new File(Environment.getExternalStorageDirectory() + "/Forms/tmp/myforms.xml");
+            if (tmpFile.exists()){
+                listParser.parse(tmpFile,listHandler1);
+            }
+            listHandler = new FormListHandler(listHandler1.getFormModelList());
+            listParser.parse(new File(Environment.getExternalStorageDirectory()+"/Forms/myforms.xml"),listHandler);
         } catch (ParserConfigurationException e) {
             Log.d("Pepito",e.getMessage());
         } catch (SAXException e) {
@@ -48,6 +58,8 @@ public class FormListView extends Activity {
         }
 
         List collection  = listHandler.getFormModelList();
+        if (collection == null)
+            collection = new ArrayList();
 
         final ListView listView = (ListView)findViewById(R.id.listView);
         FormsAdapter adapter = new FormsAdapter(this,collection);

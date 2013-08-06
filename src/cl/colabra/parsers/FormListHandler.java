@@ -18,13 +18,21 @@ import java.util.List;
 public class FormListHandler extends DefaultHandler {
 
     private FormModel formModel;
+    private List<FormModel> localModels;
     private List<FormModel> formModelList;
     private StringBuilder tagBuilder;
     private double version;
+    private String tmpName;
 
     public FormListHandler() {
         formModelList = new ArrayList<FormModel>();
         tagBuilder = new StringBuilder();
+    }
+
+    public FormListHandler(List<FormModel> localModels){
+        formModelList = new ArrayList<FormModel>();
+        tagBuilder = new StringBuilder();
+        this.localModels = localModels;
     }
 
     @Override
@@ -37,14 +45,26 @@ public class FormListHandler extends DefaultHandler {
     public void endElement(String uri, String localName, String qName) throws SAXException {
         if (localName.equals("version"))
             version = Double.parseDouble(tagBuilder.toString());
-        if (localName.equals("name"))
+        if (localName.equals("name")) {
             formModel.setName(tagBuilder.toString());
+            tmpName = formModel.getName();
+        }
         if (localName.equals("directoryName"))
             formModel.setDirectoryName(tagBuilder.toString());
         if (localName.equals("mainHtml"))
             formModel.setMainHTML(tagBuilder.toString());
         if (localName.equals("form"))
             formModelList.add(formModel);
+        if (localName.equals("localVersion")){
+            if (localModels != null){
+                for (FormModel model : localModels){
+                    if (model.getName().equals(tmpName) && model.getLocalVersion() < Double.parseDouble(tagBuilder.toString())){
+                        formModel.setHasUpdate(true);
+                    }
+                }
+            }
+            formModel.setLocalVersion(Double.parseDouble(tagBuilder.toString()));
+        }
         tagBuilder = new StringBuilder();
     }
 

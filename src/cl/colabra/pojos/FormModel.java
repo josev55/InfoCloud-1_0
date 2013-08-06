@@ -17,6 +17,8 @@ public class FormModel implements Parcelable {
     private String name;
     private String directoryName;
     private String mainHTML;
+    private double localVersion;
+    private boolean hasUpdate;
 
     public FormModel(){}
 
@@ -28,6 +30,22 @@ public class FormModel implements Parcelable {
 
     public FormModel(Parcel parcel){
         readFromParcel(parcel);
+    }
+
+    public boolean isHasUpdate() {
+        return hasUpdate;
+    }
+
+    public void setHasUpdate(boolean hasUpdate) {
+        this.hasUpdate = hasUpdate;
+    }
+
+    public double getLocalVersion() {
+        return localVersion;
+    }
+
+    public void setLocalVersion(double localVersion) {
+        this.localVersion = localVersion;
     }
 
     public String getName() {
