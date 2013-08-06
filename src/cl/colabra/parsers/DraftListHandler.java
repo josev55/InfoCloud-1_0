@@ -1,5 +1,7 @@
 package cl.colabra.parsers;
 
+import cl.colabra.pojos.DraftModel;
+import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -18,27 +20,39 @@ import java.util.Map;
 public class DraftListHandler extends DefaultHandler{
 
     private List<String> draftGroups;
-    private Map<String,List<String>> draftCollection;
+    private Map<String,List<DraftModel>> draftCollection;
     private StringBuilder tagBuilder;
     private String tmpGroupName;
+    private DraftModel draftModel;
 
     public DraftListHandler() {
         draftGroups = new LinkedList<String>();
-        draftCollection = new HashMap<String, List<String>>();
+        draftCollection = new HashMap<String, List<DraftModel>>();
         tagBuilder = new StringBuilder();
+    }
+
+    @Override
+    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+        if (localName.equals("draft")){
+            draftModel = new DraftModel();
+        }
     }
 
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
         if (localName.equals("refName")){
+            draftModel.setRefName(tagBuilder.toString());
             if (!draftGroups.contains(tagBuilder.toString())){
                 draftGroups.add(tagBuilder.toString());
-                draftCollection.put(tagBuilder.toString(),new LinkedList<String>());
+                draftCollection.put(tagBuilder.toString(),new LinkedList<DraftModel>());
             }
             tmpGroupName = tagBuilder.toString();
         }
         if (localName.equals("data")){
-            draftCollection.get(tmpGroupName).add(tagBuilder.toString());
+            draftModel.setData(tagBuilder.toString());
+        }
+        if (localName.equals("draft")){
+            draftCollection.get(draftModel.getRefName()).add(draftModel);
         }
         tagBuilder = new StringBuilder();
     }
@@ -48,7 +62,7 @@ public class DraftListHandler extends DefaultHandler{
         tagBuilder.append(ch,start,length);
     }
 
-    public Map<String, List<String>> getDraftCollection(){
+    public Map<String, List<DraftModel>> getDraftCollection(){
         return this.draftCollection;
     }
 

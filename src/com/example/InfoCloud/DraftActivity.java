@@ -7,6 +7,7 @@ import android.util.Log;
 import android.widget.ExpandableListView;
 import cl.colabra.adapters.DraftsAdapter;
 import cl.colabra.parsers.DraftListHandler;
+import cl.colabra.pojos.DraftModel;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -38,7 +39,7 @@ public class DraftActivity extends Activity {
             SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
             File xmlDrafts = new File(Environment.getExternalStorageDirectory().getPath() + "/Forms/drafts.xml");
             parser.parse(xmlDrafts,listHandler);
-            Map<String,List<String>> collection = listHandler.getDraftCollection();
+            Map<String,List<DraftModel>> collection = listHandler.getDraftCollection();
             List<String> groupList = listHandler.getDraftGroups();
             DraftsAdapter adapter = new DraftsAdapter(collection,groupList,this);
             expandableListView.setAdapter(adapter);

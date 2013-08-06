@@ -20,6 +20,7 @@ public class FormListHandler extends DefaultHandler {
     private FormModel formModel;
     private List<FormModel> formModelList;
     private StringBuilder tagBuilder;
+    private double version;
 
     public FormListHandler() {
         formModelList = new ArrayList<FormModel>();
@@ -34,6 +35,8 @@ public class FormListHandler extends DefaultHandler {
 
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
+        if (localName.equals("version"))
+            version = Double.parseDouble(tagBuilder.toString());
         if (localName.equals("name"))
             formModel.setName(tagBuilder.toString());
         if (localName.equals("directoryName"))
@@ -47,6 +50,10 @@ public class FormListHandler extends DefaultHandler {
 
     public List<FormModel> getFormModelList() {
         return formModelList;
+    }
+
+    public double getVersion(){
+        return this.version;
     }
 
     @Override

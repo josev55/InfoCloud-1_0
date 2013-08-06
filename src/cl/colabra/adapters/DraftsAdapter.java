@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+import cl.colabra.pojos.DraftModel;
 import com.example.InfoCloud.R;
 
 import java.util.List;
@@ -21,11 +22,11 @@ import java.util.Map;
  */
 public class DraftsAdapter extends BaseExpandableListAdapter {
 
-    private Map<String, List<String>> itemCollection;
+    private Map<String, List<DraftModel>> itemCollection;
     private List<String> itemGroup;
     private Context c;
 
-    public DraftsAdapter(Map<String, List<String>> itemCollection, List<String> itemGroup, Context c){
+    public DraftsAdapter(Map<String, List<DraftModel>> itemCollection, List<String> itemGroup, Context c){
         this.itemGroup = itemGroup;
         this.itemCollection = itemCollection;
         this.c = c;
@@ -48,7 +49,7 @@ public class DraftsAdapter extends BaseExpandableListAdapter {
 
     @Override
     public Object getChild(int i, int i2) {
-        return itemCollection.get(itemGroup.get(i)).get(i2);
+        return itemCollection.get(itemGroup.get(i)).get(i2).getData();
     }
 
     @Override

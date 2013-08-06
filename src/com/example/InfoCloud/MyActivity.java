@@ -14,6 +14,7 @@ import android.widget.Toast;
 import cl.colabra.parsers.InfoHandler;
 import cl.colabra.pojos.FormModel;
 import cl.colabra.pojos.InfoModel;
+import cl.colabra.utils.AndroidUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -58,7 +59,7 @@ public class MyActivity extends Activity {
         WebSettings settings = ventanita.getSettings();
         settings.setJavaScriptEnabled(true);
         JavascriptAndroidInterface jai = new JavascriptAndroidInterface(this,ventanita,formModel);
-        ventanita.loadUrl(Uri.parse("file:///android_asset/forms/"+formModel.getDirectoryName() + "/" + formModel.getMainHTML()).toString());
+        ventanita.loadUrl(Uri.parse("file://"+Environment.getExternalStorageDirectory() + "/forms/"+formModel.getDirectoryName() + "/" + formModel.getMainHTML()).toString());
         ventanita.addJavascriptInterface(jai, "AndroidFunction");
         customDialog = new CustomDialog(this,handlerCamera);
     }
@@ -92,8 +93,12 @@ public class MyActivity extends Activity {
         public void saveXML(String data) throws ParserConfigurationException, SAXException, IOException {
             SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
             InfoHandler handler = new InfoHandler();
-            InputStream xmlStream = getAssets().open("forms/"+formModel.getDirectoryName()+"/info.xml");
-            parser.parse(xmlStream,handler);
+            String infoFile = Environment.getExternalStorageDirectory() + "/Forms/"+formModel.getDirectoryName()+"/info.xml";
+            InputStream xmlStream = null;
+            if (new File(infoFile).exists()){
+                xmlStream = new FileInputStream(infoFile);
+                parser.parse(xmlStream,handler);
+            }
             InfoModel infoModel = handler.getInfoModel();
             Log.d("Pepito",data);
             if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)){
@@ -109,10 +114,26 @@ public class MyActivity extends Activity {
                     fileWriter.write(data);
                     fileWriter.close();
                     createDraft(formModel.getDirectoryName(),infoModel.getName()+"_"+infoModel.getLastCopy());
+
+                    Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(Environment.getExternalStorageDirectory() + "/Forms/" + formModel.getDirectoryName() + "/info.xml"));
+                    doc.getElementsByTagName("lastCopy").item(0).setTextContent("" + (Integer.parseInt(doc.getElementsByTagName("lastCopy").item(0).getTextContent()) + 1));
+                    String result = "";
+                    OutputStream outputStream = new ByteArrayOutputStream();
+                    StreamResult stream = new StreamResult(outputStream);
+                    TransformerFactory.newInstance().newTransformer().transform(new DOMSource(doc.getDocumentElement()),stream);
+                    File info = new File(infoFile);
+                    info.delete();
+                    FileWriter fileWriter1 = new FileWriter(new File(infoFile));
+                    fileWriter1.write(outputStream.toString());
+                    fileWriter1.close();
+
                     Toast.makeText(getApplicationContext(),"Guardado",Toast.LENGTH_SHORT).show();
                     finish();
                 } catch (IOException e) {
-                    Log.e("Pepito",e.getMessage());
+                    if (e.getMessage() != null)
+                        Log.e("Pepito",e.getMessage());
+                    else
+                        e.printStackTrace();
                 } catch (TransformerException e) {
                     Log.e("Pepito",e.getMessage());
                 }
@@ -144,7 +165,7 @@ public class MyActivity extends Activity {
 
         File xmlFile = new File(Environment.getExternalStorageDirectory().getPath() + "/Forms/drafts.xml");
         if (!xmlFile.exists())
-            copy("forms/common/drafts.xml",xmlFile);
+            AndroidUtils.copy("forms/common/drafts.xml", xmlFile,getApplicationContext());
         File file = xmlFile;
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 
@@ -204,16 +225,4 @@ public class MyActivity extends Activity {
 
         fileWriter.close();
     }
-
-    private void copy(String in, File out) throws IOException {
-        InputStream inputStream = getAssets().open(in);
-        FileOutputStream f = new FileOutputStream(out);
-        byte[] buffer = new byte[1024];
-        int len1 = 0;
-        while ((len1 = inputStream.read(buffer)) > 0) {
-            f.write(buffer, 0, len1);
-        }
-        f.close();
-    }
-
 }

@@ -15,10 +15,15 @@ public class InfoHandler extends DefaultHandler {
 
     private InfoModel infoModel;
     private StringBuilder innerText;
+    private boolean isSavingXML;
 
     public InfoHandler() {
         infoModel = new InfoModel();
         innerText = new StringBuilder();
+    }
+
+    public InfoHandler(boolean isSavingXML){
+        this.isSavingXML = isSavingXML;
     }
 
     @Override

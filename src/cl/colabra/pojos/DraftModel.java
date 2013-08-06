@@ -15,12 +15,31 @@ public class DraftModel implements Parcelable{
     private String refName;
     private String data;
 
+    public DraftModel() {
+    }
+
     public DraftModel(Parcel parcel){
         readFromParcel(parcel);
     }
 
     public DraftModel(String refName, String data) {
         this.refName = refName;
+        this.data = data;
+    }
+
+    public String getRefName() {
+        return refName;
+    }
+
+    public void setRefName(String refName) {
+        this.refName = refName;
+    }
+
+    public String getData() {
+        return data;
+    }
+
+    public void setData(String data) {
         this.data = data;
     }
 
