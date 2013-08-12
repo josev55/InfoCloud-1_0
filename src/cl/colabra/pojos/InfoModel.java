@@ -11,7 +11,7 @@ public class InfoModel {
 
     private String id;
     private String name;
-    private int version;
+    private double version;
     private int lastCopy;
 
     public InfoModel() {
@@ -33,11 +33,11 @@ public class InfoModel {
         this.name = name;
     }
 
-    public int getVersion() {
+    public double getVersion() {
         return version;
     }
 
-    public void setVersion(int version) {
+    public void setVersion(double version) {
         this.version = version;
     }
 

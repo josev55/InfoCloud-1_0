@@ -1,10 +1,12 @@
 package cl.colabra.parsers;
 
+import android.os.Environment;
 import cl.colabra.pojos.FormModel;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,7 +60,7 @@ public class FormListHandler extends DefaultHandler {
         if (localName.equals("localVersion")){
             if (localModels != null){
                 for (FormModel model : localModels){
-                    if (model.getName().equals(tmpName) && model.getLocalVersion() < Double.parseDouble(tagBuilder.toString())){
+                    if (new File(Environment.getExternalStorageDirectory() + "/Forms/" + model.getDirectoryName()).exists() && model.getName().equals(tmpName) && model.getLocalVersion() < Double.parseDouble(tagBuilder.toString())){
                         formModel.setHasUpdate(true);
                     }
                 }

@@ -15,6 +15,7 @@ import cl.colabra.parsers.InfoHandler;
 import cl.colabra.pojos.FormModel;
 import cl.colabra.pojos.InfoModel;
 import cl.colabra.utils.AndroidUtils;
+import org.json.JSONObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -29,7 +30,7 @@ import java.util.Date;
 import java.util.Properties;
 
 
-public class MyActivity extends Activity {
+public class WebActivity extends Activity {
     /**
      * Called when the activity is first created.
      */
@@ -39,103 +40,164 @@ public class MyActivity extends Activity {
     private int mYear;
     private int mMonth;
     private int mDay;
+    private final String TAG = "WebActivity";
+
     Date fecha = new Date();
     CustomDialog customDialog;
+    String data;
+    FormModel formModel;
+    boolean isDraft = false;
+    File html = null;
+    File htmlTmp = null;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
-
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         Activity activity = this;
-        FormModel formModel = activity.getIntent().getParcelableExtra("formInfo");
-        Log.d("DatePicker","Setting Date");
+        if (activity.getIntent().getStringExtra("jsonData") != null) {
+            data = activity.getIntent().getStringExtra("jsonData");
+        }
+        isDraft = activity.getIntent().getExtras().getBoolean("isDraft");
+        String directoryName = activity.getIntent().getExtras().getString("refName");
+        if (!isDraft)
+            formModel = activity.getIntent().getParcelableExtra("formInfo");
+        Log.d("DatePicker", "Setting Date");
         Calendar c = Calendar.getInstance();
         mYear = c.get(Calendar.YEAR);
         mMonth = c.get(Calendar.MONTH);
         mDay = c.get(Calendar.DAY_OF_MONTH);
 
-        ventanita = (WebView)this.findViewById(R.id.webView);
+        ventanita = (WebView) this.findViewById(R.id.webView);
         WebSettings settings = ventanita.getSettings();
         settings.setJavaScriptEnabled(true);
-        JavascriptAndroidInterface jai = new JavascriptAndroidInterface(this,ventanita,formModel);
-        ventanita.loadUrl(Uri.parse("file://"+Environment.getExternalStorageDirectory() + "/forms/"+formModel.getDirectoryName() + "/" + formModel.getMainHTML()).toString());
+        if (!isDraft) {
+            html = new File(Environment.getExternalStorageDirectory() + "/forms/" + formModel.getDirectoryName() + "/" + formModel.getMainHTML());
+            htmlTmp = new File(Environment.getExternalStorageDirectory() + "/forms/" + formModel.getDirectoryName() + "/$" + formModel.getMainHTML());
+        }
+        try {
+            if (htmlTmp != null){
+                htmlTmp.createNewFile();
+                AndroidUtils.copy(new FileInputStream(html), htmlTmp, this);
+            }
+        } catch (IOException e) {
+            Log.e(TAG, e.getMessage());
+        }
+        if (!isDraft) {
+            ventanita.loadUrl(Uri.parse("file://" + Environment.getExternalStorageDirectory() + "/forms/" + formModel.getDirectoryName() + "/" + htmlTmp.getName()).toString());
+        }
+        else {
+            File directory = new File(Environment.getExternalStorageDirectory() + "/forms/" + directoryName);
+            File[] dir = directory.listFiles();
+            String htmlFile = "";
+            for (File file : dir) {
+                if (file.getName().contains(".html")) {
+                    htmlFile = file.getName();
+                    html = new File(directory + "/" + htmlFile);
+                    htmlTmp = new File(directory + "/$" + htmlFile);
+                    try {
+                        htmlTmp.createNewFile();
+                        AndroidUtils.copy(new FileInputStream(html),htmlTmp,this);
+                    } catch (IOException e) {
+                        Log.e(TAG,e.getMessage());
+                    }
+                    break;
+                }
+            }
+            ventanita.loadUrl("file://" + Environment.getExternalStorageDirectory() + "/forms/" + directoryName + "/" + htmlFile);
+        }
+        JavascriptAndroidInterface jai =
+                isDraft
+                ? new JavascriptAndroidInterface(this, ventanita, formModel,htmlTmp,directoryName)
+                : new JavascriptAndroidInterface(this, ventanita, formModel,htmlTmp,formModel.getDirectoryName());
         ventanita.addJavascriptInterface(jai, "AndroidFunction");
-        customDialog = new CustomDialog(this,handlerCamera);
+
+
+        customDialog = new CustomDialog(this, handlerCamera);
     }
+
     public class JavascriptAndroidInterface {
 
         private final WebView mBrowser;
-
+        private File tmpFile;
         Context mContext;
         private final FormModel formModel;
+        private String directory;
 
-        JavascriptAndroidInterface(Context c, WebView browser, FormModel fModel)
-        {
+        JavascriptAndroidInterface(Context c, WebView browser, FormModel fModel, File tmpFile, String directory) {
             mContext = c;
             mBrowser = browser;
             formModel = fModel;
+            this.tmpFile = tmpFile;
+            this.directory = directory;
         }
 
-        public void openDatePickerDialog()
-        {
+        public void openDatePickerDialog() {
             customDialog.show();
         }
 
-        public String getFecha(){
+        public String getFecha() {
             return date;
         }
 
-        public void showFecha(String date){
-            Log.d("Pepito","Data: " + date);
+        public void showFecha(String date) {
+            Log.d(TAG, "Data: " + date);
+        }
+
+        public void cargarDatos() {
+            if (isDraft)
+                ventanita.loadUrl("javascript:loadData('" + data + "');");
         }
 
         public void saveXML(String data) throws ParserConfigurationException, SAXException, IOException {
             SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
             InfoHandler handler = new InfoHandler();
-            String infoFile = Environment.getExternalStorageDirectory() + "/Forms/"+formModel.getDirectoryName()+"/info.xml";
+            String infoFile = isDraft ? Environment.getExternalStorageDirectory() + "/Forms/" + directory + "/info.xml" :Environment.getExternalStorageDirectory() + "/Forms/" + formModel.getDirectoryName() + "/info.xml";
             InputStream xmlStream = null;
-            if (new File(infoFile).exists()){
+            if (new File(infoFile).exists()) {
                 xmlStream = new FileInputStream(infoFile);
-                parser.parse(xmlStream,handler);
+                parser.parse(xmlStream, handler);
             }
             InfoModel infoModel = handler.getInfoModel();
-            Log.d("Pepito",data);
-            if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)){
+            Log.d(TAG, data);
+            if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
                 String path = Environment.getExternalStorageDirectory().toString();
                 File dir = new File(path + "/Forms");
-                if (!dir.exists()){
+                if (!dir.exists()) {
                     dir.mkdir();
                 }
-                File xmlFile = new File(path + "/Forms/"+ infoModel.getName() + "_" + infoModel.getLastCopy() + ".xml");
+                File xmlFile = new File(path + "/Forms/" + infoModel.getName() + "_" + infoModel.getLastCopy() + ".xml");
                 try {
                     xmlFile.createNewFile();
                     FileWriter fileWriter = new FileWriter(xmlFile);
                     fileWriter.write(data);
                     fileWriter.close();
-                    createDraft(formModel.getDirectoryName(),infoModel.getName()+"_"+infoModel.getLastCopy());
+                    createDraft(directory, infoModel.getName() + "_" + infoModel.getLastCopy());
 
-                    Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(Environment.getExternalStorageDirectory() + "/Forms/" + formModel.getDirectoryName() + "/info.xml"));
+                    Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(Environment.getExternalStorageDirectory() + "/Forms/" + directory + "/info.xml"));
                     doc.getElementsByTagName("lastCopy").item(0).setTextContent("" + (Integer.parseInt(doc.getElementsByTagName("lastCopy").item(0).getTextContent()) + 1));
                     String result = "";
                     OutputStream outputStream = new ByteArrayOutputStream();
                     StreamResult stream = new StreamResult(outputStream);
-                    TransformerFactory.newInstance().newTransformer().transform(new DOMSource(doc.getDocumentElement()),stream);
+                    TransformerFactory.newInstance().newTransformer().transform(new DOMSource(doc.getDocumentElement()), stream);
                     File info = new File(infoFile);
                     info.delete();
                     FileWriter fileWriter1 = new FileWriter(new File(infoFile));
                     fileWriter1.write(outputStream.toString());
                     fileWriter1.close();
 
-                    Toast.makeText(getApplicationContext(),"Guardado",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Guardado", Toast.LENGTH_SHORT).show();
+                    htmlTmp.delete();
                     finish();
                 } catch (IOException e) {
+                    htmlTmp.delete();
                     if (e.getMessage() != null)
-                        Log.e("Pepito",e.getMessage());
+                        Log.e(TAG, e.getMessage());
                     else
                         e.printStackTrace();
                 } catch (TransformerException e) {
-                    Log.e("Pepito",e.getMessage());
+                    htmlTmp.delete();
+                    Log.e(TAG, e.getMessage());
                 }
             }
         }
@@ -153,11 +215,11 @@ public class MyActivity extends Activity {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            try{
-                Log.d("Pepito", "Esta wea funciona loquito2");
+            try {
                 ventanita.loadUrl("javascript:mostrarFecha('" + msg.getData().get("date").toString() + "');");
-            } catch (Exception e){Log.e("Pepito","handlerCamera :( "+e);}
-
+            } catch (Exception e) {
+                Log.e(TAG, "handlerCamera :( " + e);
+            }
         }
     };
 
@@ -165,7 +227,7 @@ public class MyActivity extends Activity {
 
         File xmlFile = new File(Environment.getExternalStorageDirectory().getPath() + "/Forms/drafts.xml");
         if (!xmlFile.exists())
-            AndroidUtils.copy("forms/common/drafts.xml", xmlFile,getApplicationContext());
+            AndroidUtils.copy("forms/common/drafts.xml", xmlFile, getApplicationContext());
         File file = xmlFile;
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 
@@ -197,15 +259,15 @@ public class MyActivity extends Activity {
 
         Properties outputProp = new Properties();
 
-        outputProp.setProperty(OutputKeys.INDENT,"yes");
+        outputProp.setProperty(OutputKeys.INDENT, "yes");
 
-        outputProp.setProperty(OutputKeys.OMIT_XML_DECLARATION,"no");
+        outputProp.setProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
 
-        outputProp.setProperty(OutputKeys.METHOD,"xml");
+        outputProp.setProperty(OutputKeys.METHOD, "xml");
 
-        outputProp.setProperty(OutputKeys.VERSION,"1.0");
+        outputProp.setProperty(OutputKeys.VERSION, "1.0");
 
-        outputProp.setProperty(OutputKeys.ENCODING,"UTF-8");
+        outputProp.setProperty(OutputKeys.ENCODING, "UTF-8");
 
         transformer.setOutputProperties(outputProp);
 
@@ -215,7 +277,7 @@ public class MyActivity extends Activity {
 
         StreamResult stream = new StreamResult(outputStream);
 
-        transformer.transform(source,stream);
+        transformer.transform(source, stream);
 
         String outputString = outputStream.toString();
 

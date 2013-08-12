@@ -33,7 +33,7 @@ public class InfoHandler extends DefaultHandler {
         else if (localName.equals("name"))
             infoModel.setName(innerText.toString().replaceAll("(\\r|\\n)","").trim());
         else if (localName.equals("version"))
-            infoModel.setVersion(Integer.parseInt(innerText.toString().replaceAll("(\\r|\\n)","").trim()));
+            infoModel.setVersion(Double.parseDouble(innerText.toString().replaceAll("(\\r|\\n)","").trim()));
         else if (localName.equals("lastCopy"))
             infoModel.setLastCopy(Integer.parseInt(innerText.toString().replaceAll("(\\r|\\n)","").trim()));
         innerText = new StringBuilder();

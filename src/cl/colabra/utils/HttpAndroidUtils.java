@@ -8,5 +8,6 @@ package cl.colabra.utils;
  * To change this template use File | Settings | File Templates.
  */
 public class HttpAndroidUtils {
-    public static String myFormsURL = "192.168.4.130/forms/myforms.xml";
+    public static String repoURL = "http://192.168.4.14/forms/repo/";
+    public static String myFormsURL = "http://192.168.4.14/forms/myforms.xml";
 }

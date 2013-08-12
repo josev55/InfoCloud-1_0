@@ -8,9 +8,9 @@ import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Toast;
 import cl.colabra.adapters.FormsAdapter;
 import cl.colabra.parsers.FormListHandler;
-import cl.colabra.pojos.FormItemModel;
 import cl.colabra.pojos.FormModel;
 import org.xml.sax.SAXException;
 
@@ -30,10 +30,13 @@ import java.util.List;
  * To change this template use File | Settings | File Templates.
  */
 public class FormListView extends Activity {
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.forms);
+
+
 
         SAXParser listParser;
 
@@ -62,7 +65,7 @@ public class FormListView extends Activity {
             collection = new ArrayList();
 
         final ListView listView = (ListView)findViewById(R.id.listView);
-        FormsAdapter adapter = new FormsAdapter(this,collection);
+        FormsAdapter adapter = new FormsAdapter(this,collection,listView);
         listView.setAdapter(adapter);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -70,9 +73,13 @@ public class FormListView extends Activity {
                 Intent loadFormIntent = new Intent();
                 FormsAdapter formsAdapter = (FormsAdapter)adapterView.getAdapter();
                 FormModel model = (FormModel)formsAdapter.getItem(i);
-                loadFormIntent.putExtra("formInfo",model);
-                loadFormIntent.setClass(getApplicationContext(),MyActivity.class);
-                startActivity(loadFormIntent);
+                if (new File(Environment.getExternalStorageDirectory() + "/Forms/" + model.getDirectoryName()).exists()){
+                    loadFormIntent.putExtra("formInfo",model);
+                    loadFormIntent.setClass(FormListView.this,WebActivity.class);
+                    startActivity(loadFormIntent);
+                } else {
+                    Toast.makeText(FormListView.this,"Formulario no instalado",Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }

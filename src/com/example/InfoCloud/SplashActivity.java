@@ -2,7 +2,6 @@ package com.example.InfoCloud;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -11,7 +10,7 @@ import android.util.Log;
 import cl.colabra.http.HttpGetAdapter;
 import cl.colabra.parsers.FormListHandler;
 import cl.colabra.utils.AndroidUtils;
-import org.w3c.dom.Document;
+import cl.colabra.utils.HttpAndroidUtils;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -40,7 +39,11 @@ public class SplashActivity extends Activity {
                 double version = formListHandler.getVersion();
                 File xmlFile = new File(Environment.getExternalStorageDirectory().getPath() + "/Forms/myforms.xml");
                 if (!xmlFile.exists()) {
-                    AndroidUtils.copy("forms/common/myforms.xml", xmlFile, getApplicationContext());
+                    xmlFile.createNewFile();
+                    FileWriter fileWriter = new FileWriter(xmlFile);
+                    fileWriter.write(httpResponse);
+                    fileWriter.close();
+//                  AndroidUtils.copy("forms/common/myforms.xml", xmlFile, getApplicationContext());
                 }
                 saxParser.parse(xmlFile, formListHandler);
                 double localVersion = formListHandler.getVersion();
@@ -76,9 +79,15 @@ public class SplashActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.splash_screen_layout);
         if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-            File myforms = new File(Environment.getExternalStorageDirectory() + "/Forms/myforms.xml");
+            File path = new File(Environment.getExternalStorageDirectory() + "/Forms");
+            File tmp = new File(path.getAbsolutePath() + "/tmp");
+            if (!tmp.exists()) {
+                tmp.mkdirs();
+            }
+            path = null;
+            tmp = null;
             HttpGetAdapter httpGetAdapter = new HttpGetAdapter(httpHandler);
-            httpGetAdapter.execute("http://192.168.4.130/forms/myforms.xml");
+            httpGetAdapter.execute(HttpAndroidUtils.myFormsURL);
         }
 
     }
